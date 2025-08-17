@@ -30,7 +30,7 @@ const NoteScreen = () => {
         return setError("Failed to fetch notes");
       }
       const data = await response.json();
-      const formattedNotes = data.slice(0, 10).map((note) => {
+      const formattedNotes = data.map((note) => {
         return {
           id: note.id.toString(),
           text: note.title,
@@ -44,18 +44,46 @@ const NoteScreen = () => {
     }
   };
 
-  const addNote = () => {
+  const addNote = async () => {
     if (newNote.trim() === "") return;
 
-    setNotes((prevNotes) => [
-      ...prevNotes,
-      { id: Date.now.toString(), text: newNote },
-    ]);
+    try {
+      setLoading(true);
+      const response = await fetch(
+        "https://jsonplaceholder.typicode.com/posts",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: newNote,
+            userId: 1,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to add note");
+      }
 
-    setNewNote("");
-    setModalVisible(false);
+      const data = await response.json();
+
+      setNotes((prevNotes) => [
+        {
+          id: data.id.toString(),
+          text: data.title,
+        },
+        ...prevNotes,
+      ]);
+
+      setNewNote("");
+      setModalVisible(false);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <View style={styles.container}>
       {loading ? (
